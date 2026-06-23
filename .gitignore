@@ -7,3 +7,5 @@ xcuserdata/
 build_dmg/
 *.app
 *.app/
+bin/
+obj/

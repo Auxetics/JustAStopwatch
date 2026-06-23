@@ -1,0 +1,31 @@
+<Window x:Class="JustAStopwatch.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="JustAStopwatch" Height="30" Width="80"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        Loaded="Window_Loaded">
+    <Grid Background="Transparent" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+        <TextBlock x:Name="TimeText" 
+                   Text="00:00:00" 
+                   Foreground="White" 
+                   FontSize="14" 
+                   FontWeight="SemiBold"
+                   FontFamily="Segoe UI"
+                   Typography.NumeralAlignment="Tabular"
+                   VerticalAlignment="Center" 
+                   HorizontalAlignment="Center"
+                   Cursor="Hand">
+            <TextBlock.ContextMenu>
+                <ContextMenu>
+                    <MenuItem x:Name="MenuUpdate" Header="Up to Date" Click="MenuUpdate_Click" />
+                    <Separator />
+                    <MenuItem x:Name="MenuStartup" Header="Launch on Startup" IsCheckable="True" Click="MenuStartup_Click" />
+                    <MenuItem Header="Donate" Click="MenuDonate_Click" />
+                    <Separator />
+                    <MenuItem Header="Quit" Click="MenuQuit_Click" />
+                </ContextMenu>
+            </TextBlock.ContextMenu>
+        </TextBlock>
+    </Grid>
+</Window>
