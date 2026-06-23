@@ -1,7 +1,5 @@
 name: Cross-Platform Build & Release
 
-name: Cross-Platform Build & Release
-
 on:
   push:
     tags:
