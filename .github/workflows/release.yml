@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0)'
+        required: true
+        default: 'v1.0'
 
 jobs:
   build:
@@ -16,7 +22,15 @@ jobs:
 
       - name: Extract Version
         id: get_version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION_CLEAN=$(echo "${{ github.event.inputs.version }}" | sed 's/^v//')
+            echo "VERSION=$VERSION_CLEAN" >> $GITHUB_ENV
+            echo "TAG_NAME=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+            echo "TAG_NAME=$GITHUB_REF_NAME" >> $GITHUB_ENV
+          fi
 
       - name: Make Build Script Executable
         run: chmod +x build.sh
@@ -27,8 +41,9 @@ jobs:
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG_NAME }}
           files: JustAStopwatch.dmg
-          name: JustAStopwatch ${{ env.GITHUB_REF_NAME }}
-          draft: false
+          name: JustAStopwatch ${{ env.TAG_NAME }}
+          draft: true
           prerelease: false
           generate_release_notes: true
