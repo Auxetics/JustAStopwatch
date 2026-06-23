@@ -72,7 +72,7 @@ class AutoUpdater: NSObject {
     func applyUpdate(dmgURL: URL) {
         let script = """
         #!/bin/bash
-        sleep 2
+        sleep 3
         hdiutil attach "\(dmgURL.path)" -nobrowse -mountpoint /Volumes/JustAStopwatchUpdate
         rm -rf "/Applications/JustAStopwatch.app"
         cp -R "/Volumes/JustAStopwatchUpdate/JustAStopwatch.app" "/Applications/"
@@ -86,8 +86,12 @@ class AutoUpdater: NSObject {
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
             
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/bin/bash")
-            process.arguments = [scriptURL.path]
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/nohup")
+            process.arguments = ["/bin/bash", scriptURL.path]
+            if #available(macOS 10.13, *) {
+                process.standardOutput = FileHandle.nullDevice
+                process.standardError = FileHandle.nullDevice
+            }
             try process.run()
             
             NSApp.terminate(nil)
