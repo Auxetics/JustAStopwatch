@@ -31,4 +31,10 @@ A perfectly lightweight, cross-platform, bloat-free stopwatch application for yo
 ## Troubleshooting
 
 ### macOS Security
-Due to strict Apple security rules on some macOS versions (like macOS Sequoia or later), you might see a warning when opening the app for the first time. Simply right-click the app in your Applications folder and select **Open** to bypass this one-time warning.
+Because this application is open-source and not distributed through the Mac App Store, modern macOS versions (like macOS Sequoia) may initially block the application with a popup offering to "Move to Trash" or "Done". To allow the app to run:
+1. Click **Done** on the popup.
+2. Open your Mac's **System Settings**.
+3. Navigate to **Privacy & Security**.
+4. Scroll down until you see a message stating that `JustAStopwatch` was blocked.
+5. Click the **Open Anyway** button next to it.
+6. The app will securely launch and appear in your menu bar!
