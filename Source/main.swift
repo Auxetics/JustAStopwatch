@@ -9,7 +9,9 @@ enum UpdateState {
 
 class AutoUpdater: NSObject {
     var currentState: UpdateState = .upToDate
-    let currentVersion = "1.0"
+    var currentVersion: String {
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
     
     func checkForUpdates() {
         let url = URL(string: "https://api.github.com/repos/Auxetics/JustAStopwatch/releases/latest")!
@@ -214,7 +216,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateItem.target = self
         switch updater.currentState {
         case .upToDate:
-            updateItem.title = "Up to Date (v1.0)"
+            updateItem.title = "Up to Date (v\(updater.currentVersion))"
             updateItem.action = #selector(checkUpdatesManually)
         case .downloading:
             updateItem.title = "Downloading Update..."
