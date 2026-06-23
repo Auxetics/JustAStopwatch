@@ -1,0 +1,9 @@
+.DS_Store
+build/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+*.dmg
+build_dmg/
+*.app
+*.app/
