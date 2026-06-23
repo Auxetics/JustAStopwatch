@@ -260,6 +260,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func performUpdate() {
+        if isRunning || accumulatedTime > 0 {
+            let alert = NSAlert()
+            alert.messageText = "Cannot Update"
+            alert.informativeText = "Please reset the stopwatch to 00:00 before applying an update to prevent losing your tracked time."
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            return
+        }
+        
         if case .updateReady(let url) = updater.currentState {
             updater.applyUpdate(dmgURL: url)
         }

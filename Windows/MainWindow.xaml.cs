@@ -273,6 +273,12 @@ namespace JustAStopwatch
 
         private async void MenuUpdate_Click(object sender, RoutedEventArgs e)
         {
+            if (_isRunning || _elapsedTime.TotalSeconds > 0)
+            {
+                MessageBox.Show("Please reset the stopwatch to 00:00 before applying an update to prevent losing your tracked time.", "Cannot Update", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (string.IsNullOrEmpty(_downloadUrl))
             {
                 CheckForUpdates();
