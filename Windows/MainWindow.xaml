@@ -5,7 +5,7 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
         Loaded="Window_Loaded">
-    <Grid Background="Transparent" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+    <Grid Background="#01000000" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
         <TextBlock x:Name="TimeText" 
                    Text="00:00:00" 
                    Foreground="White" 

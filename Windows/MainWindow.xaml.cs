@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using System.IO;
 using System.Reflection;
+using System.Windows.Interop;
 
 namespace JustAStopwatch
 {
@@ -21,7 +22,7 @@ namespace JustAStopwatch
         private TimeSpan _elapsedTime = TimeSpan.Zero;
         private bool _isRunning = false;
         
-        private const string AppVersion = "1.0.0";
+        private readonly string AppVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(2) ?? "1.0";
         private string _downloadUrl = "";
         
         [DllImport("user32.dll", SetLastError = true)]
@@ -34,6 +35,13 @@ namespace JustAStopwatch
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
         {
@@ -45,6 +53,30 @@ namespace JustAStopwatch
 
         public MainWindow()
         {
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "JustAStopwatch");
+            string installedExe = Path.Combine(appDataPath, "JustAStopwatch.exe");
+            string currentExe = Environment.ProcessPath!;
+
+            if (!currentExe.Equals(installedExe, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    Directory.CreateDirectory(appDataPath);
+                    File.Copy(currentExe, installedExe, true);
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = installedExe,
+                        UseShellExecute = true
+                    });
+                    Application.Current.Shutdown();
+                    return;
+                }
+                catch
+                {
+                    // Fail silently and run from current location
+                }
+            }
+
             InitializeComponent();
             
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
@@ -139,16 +171,30 @@ namespace JustAStopwatch
         private void PositionTimer_Tick(object? sender, EventArgs e)
         {
             UpdatePosition();
+            
+            try
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+                }
+            }
+            catch { }
         }
 
         private void MenuStartup_Click(object sender, RoutedEventArgs e)
         {
             string runKey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "JustAStopwatch");
+            string installedExe = Path.Combine(appDataPath, "JustAStopwatch.exe");
+            string path = File.Exists(installedExe) ? installedExe : Environment.ProcessPath!;
+
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey(runKey, true)!)
             {
                 if (MenuStartup.IsChecked)
                 {
-                    key.SetValue("JustAStopwatch", Environment.ProcessPath!);
+                    key.SetValue("JustAStopwatch", path);
                 }
                 else
                 {
