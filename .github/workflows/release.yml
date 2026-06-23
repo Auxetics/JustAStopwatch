@@ -1,47 +1,77 @@
 name: Cross-Platform Build & Release
 
+name: Cross-Platform Build & Release
+
 on:
-  workflow_dispatch:
-    inputs:
-      custom_version:
-        description: 'Custom version override (leave blank to auto-increment by 0.1)'
-        required: false
-        type: string
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  versioning:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract Version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Make Build Script Executable
+        run: chmod +x macOS/build.sh
+
+      - name: Compile and Package Application
+        run: cd macOS && ./build.sh ${{ env.VERSION }}
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: macOS/JustAStopwatch.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Extract Version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $env:GITHUB_ENV
+
+      - name: Compile Windows WPF App
+        run: |
+          cd Windows
+          dotnet publish JustAStopwatch.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ env.VERSION }}
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: Windows/bin/Release/net8.0-windows/win-x64/publish/JustAStopwatch.exe
+
+  publish:
+    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    outputs:
-      new_version: ${{ steps.bump.outputs.new_version }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Bump Version and Generate Changelog
-        id: bump
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate Changelog
         run: |
-          CURRENT=$(cat version.txt)
-          if [ -n "${{ github.event.inputs.custom_version }}" ]; then
-            NEW_VERSION="${{ github.event.inputs.custom_version }}"
-          else
-            NEW_VERSION=$(awk '{printf "%.1f", $1 + 0.1}' version.txt)
-          fi
-          
-          echo $NEW_VERSION > version.txt
-          
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git commit -am "chore: Bump version to $NEW_VERSION"
-          git push origin main
-          git tag "v$NEW_VERSION"
-          git push origin "v$NEW_VERSION"
-          
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -z "$PREV_TAG" ]; then
             git log -n 5 --oneline > changelog.txt
@@ -52,81 +82,18 @@ jobs:
           # Remove the chore commit from changelog
           sed -i '/chore: Bump version/d' changelog.txt
           
-          if [ ! -s changelog.txt ]; then
+          if [ ! -s changelog.txt ] || [ $(wc -l < changelog.txt) -eq 1 ]; then
             echo "No changes, version bump to remain cross platform parity." > changelog.txt
           fi
-
-      - name: Upload Changelog
-        uses: actions/upload-artifact@v4
-        with:
-          name: changelog
-          path: changelog.txt
-
-  build-macos:
-    needs: versioning
-    runs-on: macos-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          ref: v${{ needs.versioning.outputs.new_version }}
-
-      - name: Make Build Script Executable
-        run: chmod +x macOS/build.sh
-
-      - name: Compile and Package Application
-        run: cd macOS && ./build.sh ${{ needs.versioning.outputs.new_version }}
-
-      - name: Upload macOS Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-dmg
-          path: macOS/JustAStopwatch.dmg
-
-  build-windows:
-    needs: versioning
-    runs-on: windows-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          ref: v${{ needs.versioning.outputs.new_version }}
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Compile Windows WPF App
-        run: |
-          cd Windows
-          dotnet publish JustAStopwatch.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ needs.versioning.outputs.new_version }}
-
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-exe
-          path: Windows/bin/Release/net8.0-windows/win-x64/publish/JustAStopwatch.exe
-
-  publish:
-    needs: [versioning, build-macos, build-windows]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.versioning.outputs.new_version }}
+          tag_name: ${{ github.ref_name }}
           files: |
             artifacts/macos-dmg/JustAStopwatch.dmg
             artifacts/windows-exe/JustAStopwatch.exe
-          name: JustAStopwatch v${{ needs.versioning.outputs.new_version }}
-          body_path: artifacts/changelog/changelog.txt
+          name: JustAStopwatch ${{ github.ref_name }}
+          body_path: changelog.txt
           draft: true
           prerelease: false
