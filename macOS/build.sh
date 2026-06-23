@@ -6,6 +6,8 @@ echo "Building JustAStopwatch version $VERSION..."
 
 echo "Compiling Swift Source..."
 mkdir -p "JustAStopwatch.app/Contents/MacOS"
+mkdir -p "JustAStopwatch.app/Contents/Resources"
+cp AppIcon.icns "JustAStopwatch.app/Contents/Resources/"
 swiftc -target arm64-apple-macos13.0 Source/main.swift -o "JustAStopwatch.app/Contents/MacOS/JustAStopwatch"
 
 echo "Creating PkgInfo..."
@@ -23,6 +25,8 @@ cat <<EOF > "JustAStopwatch.app/Contents/Info.plist"
     <string>com.auxetics.justastopwatch</string>
     <key>CFBundleName</key>
     <string>JustAStopwatch</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleVersion</key>
     <string>$VERSION</string>
     <key>CFBundleShortVersionString</key>
