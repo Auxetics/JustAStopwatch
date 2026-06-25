@@ -9,6 +9,10 @@ A perfectly lightweight, cross-platform, bloat-free stopwatch application for yo
 ## Features
 
 - **Cross-Platform Parity**: Available natively for both macOS (Menu Bar) and Windows (Taskbar overlay) with an identical feature set.
+- **Two Timer Modes**: Seamlessly toggle between a traditional **Stopwatch** and a fully customizable, looping **Pomodoro Timer**.
+- **Pomodoro Workflow**: Automatically triggers native OS notifications (macOS Banners and Windows Toasts) when your Work or Break session finishes, effortlessly transitioning states and colors for you.
+- **Visual Status Indicators**: A sleek, dynamic dot sits neatly beside your timer, giving you instant visual feedback on whether your timer is actively running (Green) or paused (Orange), and gracefully vanishing when perfectly idle.
+- **Preferences Hub**: Set custom, persistent Work and Break durations straight from the right-click menu.
 - **Click to Start/Pause**: A single left click on the timer instantly starts or pauses it.
 - **Double-Click to Reset**: Rapidly double-click the timer to reset it back to zero.
 - **Dynamic Formatting**: Keeps your taskbar and menu bar tidy. Displays as `MM:SS` (e.g. `00:00`), automatically expanding to `HH:MM:SS` when your timer reaches an hour.
