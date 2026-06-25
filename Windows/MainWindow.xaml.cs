@@ -278,8 +278,12 @@ namespace JustAStopwatch
 
         private void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
-            var settingsWindow = new SettingsWindow(_settings);
-            if (settingsWindow.ShowDialog() == true)
+            _positionTimer.Stop();
+            var settingsWindow = new SettingsWindow(_settings) { Owner = this };
+            bool? result = settingsWindow.ShowDialog();
+            _positionTimer.Start();
+            
+            if (result == true)
             {
                 SaveSettings();
                 if (_mode == AppMode.Pomodoro && !_isRunning)
