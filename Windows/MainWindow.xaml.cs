@@ -14,7 +14,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using Microsoft.Toolkit.Uwp.Notifications;
 
-namespace JustAStopwatch
+namespace WFHTimer
 {
     public class AppSettings
     {
@@ -72,8 +72,8 @@ namespace JustAStopwatch
 
         public MainWindow()
         {
-            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "JustAStopwatch");
-            string installedExe = Path.Combine(appDataPath, "JustAStopwatch.exe");
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WFHTimer");
+            string installedExe = Path.Combine(appDataPath, "WFHTimer.exe");
             string currentExe = Environment.ProcessPath!;
 
             if (!currentExe.Equals(installedExe, StringComparison.OrdinalIgnoreCase))
@@ -337,14 +337,14 @@ namespace JustAStopwatch
         private void MenuStartup_Click(object sender, RoutedEventArgs e)
         {
             string runKey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
-            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "JustAStopwatch");
-            string installedExe = Path.Combine(appDataPath, "JustAStopwatch.exe");
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WFHTimer");
+            string installedExe = Path.Combine(appDataPath, "WFHTimer.exe");
             string path = File.Exists(installedExe) ? installedExe : Environment.ProcessPath!;
 
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey(runKey, true)!)
             {
-                if (MenuStartup.IsChecked) key.SetValue("JustAStopwatch", path);
-                else key.DeleteValue("JustAStopwatch", false);
+                if (MenuStartup.IsChecked) key.SetValue("WFHTimer", path);
+                else key.DeleteValue("WFHTimer", false);
             }
         }
 
@@ -353,7 +353,7 @@ namespace JustAStopwatch
             string runKey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey(runKey, false)!)
             {
-                MenuStartup.IsChecked = key.GetValue("JustAStopwatch") != null;
+                MenuStartup.IsChecked = key.GetValue("WFHTimer") != null;
             }
         }
 
@@ -372,8 +372,8 @@ namespace JustAStopwatch
             try
             {
                 using var client = new HttpClient();
-                client.DefaultRequestHeaders.Add("User-Agent", "JustAStopwatch-Updater");
-                var response = await client.GetStringAsync("https://api.github.com/repos/Auxetics/JustAStopwatch/releases/latest");
+                client.DefaultRequestHeaders.Add("User-Agent", "WFHTimer-Updater");
+                var response = await client.GetStringAsync("https://api.github.com/repos/Auxetics/WFHTimer/releases/latest");
                 var release = JsonSerializer.Deserialize<GitHubRelease>(response);
 
                 if (release != null && release.tag_name != null)
@@ -426,11 +426,11 @@ namespace JustAStopwatch
                 using var client = new HttpClient();
                 var exeBytes = await client.GetByteArrayAsync(_downloadUrl);
                 
-                string tempExe = Path.Combine(Path.GetTempPath(), "JustAStopwatch_Update.exe");
+                string tempExe = Path.Combine(Path.GetTempPath(), "WFHTimer_Update.exe");
                 await File.WriteAllBytesAsync(tempExe, exeBytes);
 
                 string currentExe = Environment.ProcessPath!;
-                string batchScript = Path.Combine(Path.GetTempPath(), "update_justastopwatch.bat");
+                string batchScript = Path.Combine(Path.GetTempPath(), "update_wfhtimer.bat");
                 
                 string scriptContent = $@"
 @echo off

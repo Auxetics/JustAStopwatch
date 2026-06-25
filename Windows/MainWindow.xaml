@@ -1,7 +1,7 @@
-<Window x:Class="JustAStopwatch.MainWindow"
+<Window x:Class="WFHTimer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="JustAStopwatch" Height="30" Width="95"
+        Title="WFH Timer" Height="30" Width="95"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
         Loaded="Window_Loaded">

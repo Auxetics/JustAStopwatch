@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace JustAStopwatch
+namespace WFHTimer
 {
     public partial class App : Application
     {

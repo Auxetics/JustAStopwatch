@@ -2,29 +2,29 @@
 set -e
 
 VERSION=${1:-"1.0"}
-echo "Building JustAStopwatch version $VERSION..."
+echo "Building WFHTimer version $VERSION..."
 
 echo "Compiling Swift Source..."
-mkdir -p "JustAStopwatch.app/Contents/MacOS"
-mkdir -p "JustAStopwatch.app/Contents/Resources"
-cp AppIcon.icns "JustAStopwatch.app/Contents/Resources/"
-swiftc -target arm64-apple-macos13.0 Source/main.swift -o "JustAStopwatch.app/Contents/MacOS/JustAStopwatch"
+mkdir -p "WFHTimer.app/Contents/MacOS"
+mkdir -p "WFHTimer.app/Contents/Resources"
+cp AppIcon.icns "WFHTimer.app/Contents/Resources/"
+swiftc -target arm64-apple-macos13.0 Source/main.swift -o "WFHTimer.app/Contents/MacOS/WFHTimer"
 
 echo "Creating PkgInfo..."
-echo -n "APPL????" > "JustAStopwatch.app/Contents/PkgInfo"
+echo -n "APPL????" > "WFHTimer.app/Contents/PkgInfo"
 
 echo "Creating Info.plist..."
-cat <<EOF > "JustAStopwatch.app/Contents/Info.plist"
+cat <<EOF > "WFHTimer.app/Contents/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>JustAStopwatch</string>
+    <string>WFHTimer</string>
     <key>CFBundleIdentifier</key>
-    <string>com.auxetics.justastopwatch</string>
+    <string>com.auxetics.wfhtimer</string>
     <key>CFBundleName</key>
-    <string>JustAStopwatch</string>
+    <string>WFH Timer</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleVersion</key>
@@ -48,13 +48,13 @@ cat <<EOF > "JustAStopwatch.app/Contents/Info.plist"
 EOF
 
 echo "Codesigning..."
-codesign --force --deep -s - "JustAStopwatch.app"
+codesign --force --deep -s - "WFHTimer.app"
 
 echo "Creating DMG Installer..."
-rm -rf build_dmg JustAStopwatch.dmg
+rm -rf build_dmg WFHTimer.dmg
 mkdir -p build_dmg
-cp -R "JustAStopwatch.app" build_dmg/
+cp -R "WFHTimer.app" build_dmg/
 ln -s /Applications build_dmg/Applications
-hdiutil create -volname "JustAStopwatch" -srcfolder build_dmg -ov -format UDZO "JustAStopwatch.dmg"
+hdiutil create -volname "WFHTimer" -srcfolder build_dmg -ov -format UDZO "WFHTimer.dmg"
 
-echo "Build Complete! JustAStopwatch.dmg is ready."
+echo "Build Complete! WFHTimer.dmg is ready."

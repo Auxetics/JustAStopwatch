@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="stopwatch_transparent.png" width="128" alt="JustAStopwatch Logo">
+  <img src="stopwatch_transparent.png" width="128" alt="WFHTimer Logo">
 </p>
 
-# JustAStopwatch
+# WFH Timer
 
 A perfectly lightweight, cross-platform, bloat-free stopwatch application for your macOS menu bar and Windows taskbar. Designed with performance and simplicity in mind, it provides the precise functionality you need without the unnecessary telemetry or tracking of other alternatives.
 
@@ -23,13 +23,13 @@ A perfectly lightweight, cross-platform, bloat-free stopwatch application for yo
 ## Installation
 
 ### macOS
-1. Navigate to the [Releases](https://github.com/Auxetics/JustAStopwatch/releases) tab.
-2. Download the latest `JustAStopwatch.dmg` file.
+1. Navigate to the [Releases](https://github.com/Auxetics/WFHTimer/releases) tab.
+2. Download the latest `WFHTimer.dmg` file.
 3. Open the downloaded `.dmg` and drag the application directly into your `/Applications` folder.
 
 ### Windows
-1. Navigate to the [Releases](https://github.com/Auxetics/JustAStopwatch/releases) tab.
-2. Download the latest `JustAStopwatch.exe` file.
+1. Navigate to the [Releases](https://github.com/Auxetics/WFHTimer/releases) tab.
+2. Download the latest `WFHTimer.exe` file.
 3. Simply run the file! The standalone executable will securely self-install into your `%AppData%` folder on first launch so you don't have to worry about accidentally deleting it.
 
 ## Troubleshooting
@@ -39,6 +39,6 @@ Because this application is open-source and not distributed through the Mac App 
 1. Click **Done** on the popup.
 2. Open your Mac's **System Settings**.
 3. Navigate to **Privacy & Security**.
-4. Scroll down until you see a message stating that `JustAStopwatch` was blocked.
+4. Scroll down until you see a message stating that `WFHTimer` was blocked.
 5. Click the **Open Anyway** button next to it.
 6. The app will securely launch and appear in your menu bar!

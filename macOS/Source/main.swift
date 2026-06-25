@@ -25,7 +25,7 @@ class AutoUpdater: NSObject {
     }
     
     func checkForUpdates() {
-        let url = URL(string: "https://api.github.com/repos/Auxetics/JustAStopwatch/releases/latest")!
+        let url = URL(string: "https://api.github.com/repos/Auxetics/WFHTimer/releases/latest")!
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data, error == nil else { return }
             do {
@@ -61,7 +61,7 @@ class AutoUpdater: NSObject {
             }
             let fileManager = FileManager.default
             let tempDir = fileManager.temporaryDirectory
-            let destinationURL = tempDir.appendingPathComponent("JustAStopwatch_Update.dmg")
+            let destinationURL = tempDir.appendingPathComponent("WFHTimer_Update.dmg")
             do {
                 if fileManager.fileExists(atPath: destinationURL.path) {
                     try fileManager.removeItem(at: destinationURL)
@@ -83,14 +83,14 @@ class AutoUpdater: NSObject {
         let script = """
         #!/bin/bash
         sleep 3
-        hdiutil attach "\(dmgURL.path)" -nobrowse -mountpoint /Volumes/JustAStopwatchUpdate
-        rm -rf "/Applications/JustAStopwatch.app"
-        cp -R "/Volumes/JustAStopwatchUpdate/JustAStopwatch.app" "/Applications/"
-        hdiutil detach /Volumes/JustAStopwatchUpdate -force
-        open "/Applications/JustAStopwatch.app"
+        hdiutil attach "\(dmgURL.path)" -nobrowse -mountpoint /Volumes/WFHTimerUpdate
+        rm -rf "/Applications/WFHTimer.app"
+        cp -R "/Volumes/WFHTimerUpdate/WFHTimer.app" "/Applications/"
+        hdiutil detach /Volumes/WFHTimerUpdate -force
+        open "/Applications/WFHTimer.app"
         """
         
-        let scriptURL = FileManager.default.temporaryDirectory.appendingPathComponent("update_stopwatch.sh")
+        let scriptURL = FileManager.default.temporaryDirectory.appendingPathComponent("update_wfhtimer.sh")
         do {
             try script.write(to: scriptURL, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
@@ -391,7 +391,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         menu.addItem(NSMenuItem.separator())
         
         // Quit
-        let quitItem = NSMenuItem(title: "Quit JustAStopwatch", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit WFHTimer", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
         
