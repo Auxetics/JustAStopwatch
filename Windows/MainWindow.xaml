@@ -1,31 +1,35 @@
 <Window x:Class="JustAStopwatch.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="JustAStopwatch" Height="30" Width="80"
+        Title="JustAStopwatch" Height="30" Width="95"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
         Loaded="Window_Loaded">
     <Grid Background="#01000000" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
-        <TextBlock x:Name="TimeText" 
-                   Text="00:00:00" 
-                   Foreground="White" 
-                   FontSize="14" 
-                   FontWeight="SemiBold"
-                   FontFamily="Segoe UI"
-                   Typography.NumeralAlignment="Tabular"
-                   VerticalAlignment="Center" 
-                   HorizontalAlignment="Center"
-                   Cursor="Hand">
-            <TextBlock.ContextMenu>
-                <ContextMenu>
-                    <MenuItem x:Name="MenuUpdate" Header="Up to Date" Click="MenuUpdate_Click" />
-                    <Separator />
-                    <MenuItem x:Name="MenuStartup" Header="Launch on Startup" IsCheckable="True" Click="MenuStartup_Click" />
-                    <MenuItem Header="Donate" Click="MenuDonate_Click" />
-                    <Separator />
-                    <MenuItem Header="Quit" Click="MenuQuit_Click" />
-                </ContextMenu>
-            </TextBlock.ContextMenu>
-        </TextBlock>
+        <Grid.ContextMenu>
+            <ContextMenu>
+                <MenuItem x:Name="MenuMode" Header="Switch to Pomodoro Mode" Click="MenuMode_Click" />
+                <MenuItem Header="Preferences..." Click="MenuSettings_Click" />
+                <Separator />
+                <MenuItem x:Name="MenuUpdate" Header="Up to Date" Click="MenuUpdate_Click" />
+                <Separator />
+                <MenuItem x:Name="MenuStartup" Header="Launch on Startup" IsCheckable="True" Click="MenuStartup_Click" />
+                <MenuItem Header="Donate" Click="MenuDonate_Click" />
+                <Separator />
+                <MenuItem Header="Quit" Click="MenuQuit_Click" />
+            </ContextMenu>
+        </Grid.ContextMenu>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Ellipse x:Name="StatusDot" Width="6" Height="6" Fill="Orange" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock x:Name="TimeText" 
+                       Text="00:00" 
+                       Foreground="White" 
+                       FontSize="14" 
+                       FontWeight="SemiBold"
+                       FontFamily="Segoe UI"
+                       Typography.NumeralAlignment="Tabular"
+                       VerticalAlignment="Center" 
+                       Cursor="Hand" />
+        </StackPanel>
     </Grid>
 </Window>

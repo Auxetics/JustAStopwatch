@@ -1,10 +1,21 @@
 import Cocoa
 import ServiceManagement
+import UserNotifications
 
 enum UpdateState {
     case upToDate
     case downloading
     case updateReady(dmgURL: URL)
+}
+
+enum AppMode {
+    case stopwatch
+    case pomodoro
+}
+
+enum PomodoroSession {
+    case work
+    case `break`
 }
 
 class AutoUpdater: NSObject {
@@ -24,7 +35,6 @@ class AutoUpdater: NSObject {
                     
                     let version = tagName.replacingOccurrences(of: "v", with: "")
                     if version.compare(self.currentVersion, options: .numeric) == .orderedDescending {
-                        // Found newer version!
                         if let dmgAsset = assets.first(where: { ($0["name"] as? String)?.hasSuffix(".dmg") == true }),
                            let downloadURLString = dmgAsset["browser_download_url"] as? String,
                            let downloadURL = URL(string: downloadURLString) {
@@ -101,13 +111,16 @@ class AutoUpdater: NSObject {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     var statusItem: NSStatusItem!
     
     var timer: Timer?
     var startTime: Date?
     var accumulatedTime: TimeInterval = 0
     var isRunning = false
+    var mode: AppMode = .stopwatch
+    var pomodoroSession: PomodoroSession = .work
+    var pomodoroRemainingSeconds: TimeInterval = 0
     
     var lastClickTime: Date?
     let updater = AutoUpdater()
@@ -116,16 +129,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem.button {
-            let fontSize = NSFont.systemFontSize
-            button.font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
-            
-            button.title = "00:00"
             button.action = #selector(handleClick)
             button.target = self
             button.sendAction(on: [.leftMouseDown, .rightMouseDown])
         }
         
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in }
+        UNUserNotificationCenter.current().delegate = self
+        
+        // Load defaults if empty
+        if UserDefaults.standard.integer(forKey: "workDuration") == 0 {
+            UserDefaults.standard.set(25, forKey: "workDuration")
+        }
+        if UserDefaults.standard.integer(forKey: "breakDuration") == 0 {
+            UserDefaults.standard.set(5, forKey: "breakDuration")
+        }
+        
+        reset()
         updater.checkForUpdates()
+    }
+    
+    // Show notifications even if app is focused
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if #available(macOS 11.0, *) {
+            completionHandler([.banner, .sound])
+        } else {
+            completionHandler([.alert, .sound])
+        }
     }
     
     @objc func handleClick() {
@@ -172,7 +202,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !isRunning { return }
         isRunning = false
         if let start = startTime {
-            accumulatedTime += Date().timeIntervalSince(start)
+            if mode == .stopwatch {
+                accumulatedTime += Date().timeIntervalSince(start)
+            } else {
+                pomodoroRemainingSeconds -= Date().timeIntervalSince(start)
+            }
         }
         startTime = nil
         timer?.invalidate()
@@ -186,34 +220,141 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         timer = nil
         accumulatedTime = 0
         startTime = nil
+        
+        if mode == .pomodoro {
+            let workMins = UserDefaults.standard.integer(forKey: "workDuration")
+            pomodoroRemainingSeconds = TimeInterval(workMins * 60)
+            pomodoroSession = .work
+        }
+        
         updateTime()
     }
     
     @objc func updateTime() {
-        var elapsed = accumulatedTime
-        if let start = startTime {
-            elapsed += Date().timeIntervalSince(start)
+        if mode == .stopwatch {
+            var elapsed = accumulatedTime
+            if let start = startTime, isRunning {
+                elapsed += Date().timeIntervalSince(start)
+            }
+            updateDisplay(seconds: Int(elapsed))
+        } else {
+            var remaining = pomodoroRemainingSeconds
+            if let start = startTime, isRunning {
+                remaining -= Date().timeIntervalSince(start)
+            }
+            
+            if remaining <= 0 && isRunning {
+                handlePomodoroEnd()
+                return
+            }
+            updateDisplay(seconds: Int(max(0, remaining)))
+        }
+    }
+    
+    func sendRobustNotification(title: String, body: String) {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional {
+                let content = UNMutableNotificationContent()
+                content.title = title
+                content.body = body
+                content.sound = UNNotificationSound.default
+                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+                UNUserNotificationCenter.current().add(request)
+            } else {
+                DispatchQueue.main.async {
+                    let script = "display notification \"\(body)\" with title \"\(title)\" sound name \"Glass\""
+                    var error: NSDictionary?
+                    if let appleScript = NSAppleScript(source: script) {
+                        appleScript.executeAndReturnError(&error)
+                    }
+                }
+            }
+        }
+    }
+    
+    func handlePomodoroEnd() {
+        isRunning = false
+        timer?.invalidate()
+        timer = nil
+        startTime = nil
+        
+        if pomodoroSession == .work {
+            pomodoroSession = .break
+            let breakMins = UserDefaults.standard.integer(forKey: "breakDuration")
+            pomodoroRemainingSeconds = TimeInterval(breakMins * 60)
+            sendRobustNotification(title: "Work Session Complete!", body: "Time for a break.")
+        } else {
+            pomodoroSession = .work
+            let workMins = UserDefaults.standard.integer(forKey: "workDuration")
+            pomodoroRemainingSeconds = TimeInterval(workMins * 60)
+            sendRobustNotification(title: "Break Over!", body: "Back to work.")
         }
         
-        let totalSeconds = Int(elapsed)
+        // Auto start next phase
+        start()
+    }
+    
+    func updateDisplay(seconds totalSeconds: Int) {
         let hours = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
-        let seconds = totalSeconds % 60
+        let secs = totalSeconds % 60
         
         let timeString: String
         if hours >= 1 {
-            timeString = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+            timeString = String(format: "%02d:%02d:%02d", hours, minutes, secs)
         } else {
-            timeString = String(format: "%02d:%02d", minutes, seconds)
+            timeString = String(format: "%02d:%02d", minutes, secs)
         }
         
         if let button = statusItem.button {
-            button.title = timeString
+            let fontSize = NSFont.systemFontSize
+            let font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
+            
+            let textColor: NSColor = (mode == .pomodoro && pomodoroSession == .break) ? NSColor.systemOrange : NSColor.labelColor
+            
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: textColor
+            ]
+            
+            let attributedTime = NSMutableAttributedString(string: timeString, attributes: attributes)
+            
+            let hasStartedStopwatch = mode == .stopwatch && (accumulatedTime > 0 || isRunning)
+            let hasStartedPomodoro = mode == .pomodoro && (pomodoroRemainingSeconds < TimeInterval(UserDefaults.standard.integer(forKey: "workDuration") * 60) || isRunning)
+            let shouldShowDot = hasStartedStopwatch || hasStartedPomodoro
+            
+            let finalString = NSMutableAttributedString()
+            
+            if shouldShowDot {
+                let dotColor: NSColor = isRunning ? NSColor.systemGreen : NSColor.systemOrange
+                let dotAttr: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: dotColor
+                ]
+                let dotString = NSAttributedString(string: "● ", attributes: dotAttr)
+                finalString.append(dotString)
+            }
+            
+            finalString.append(attributedTime)
+            
+            button.attributedTitle = finalString
         }
     }
     
     func showMenu(event: NSEvent) {
         let menu = NSMenu()
+        
+        // Toggle Mode
+        let modeItem = NSMenuItem(title: mode == .stopwatch ? "Switch to Pomodoro Mode" : "Switch to Stopwatch Mode", action: #selector(toggleMode), keyEquivalent: "")
+        modeItem.target = self
+        menu.addItem(modeItem)
+        
+        // Preferences
+        let prefsItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: ",")
+        prefsItem.target = self
+        menu.addItem(prefsItem)
+        
+        menu.addItem(NSMenuItem.separator())
         
         // Auto-Updater
         let updateItem = NSMenuItem()
@@ -259,17 +400,62 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    @objc func toggleMode() {
+        mode = (mode == .stopwatch) ? .pomodoro : .stopwatch
+        reset()
+    }
+    
+    @objc func openPreferences() {
+        let alert = NSAlert()
+        alert.messageText = "Pomodoro Preferences"
+        alert.informativeText = "Set your Work and Break durations (in minutes):"
+        
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 200, height: 60))
+        
+        let workLabel = NSTextField(labelWithString: "Work:")
+        workLabel.frame = NSRect(x: 0, y: 35, width: 60, height: 20)
+        view.addSubview(workLabel)
+        
+        let workInput = NSTextField(frame: NSRect(x: 60, y: 35, width: 140, height: 20))
+        workInput.stringValue = String(UserDefaults.standard.integer(forKey: "workDuration"))
+        view.addSubview(workInput)
+        
+        let breakLabel = NSTextField(labelWithString: "Break:")
+        breakLabel.frame = NSRect(x: 0, y: 5, width: 60, height: 20)
+        view.addSubview(breakLabel)
+        
+        let breakInput = NSTextField(frame: NSRect(x: 60, y: 5, width: 140, height: 20))
+        breakInput.stringValue = String(UserDefaults.standard.integer(forKey: "breakDuration"))
+        view.addSubview(breakInput)
+        
+        alert.accessoryView = view
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        
+        // Bring to front
+        NSApp.activate(ignoringOtherApps: true)
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            if let w = Int(workInput.stringValue), w > 0 { UserDefaults.standard.set(w, forKey: "workDuration") }
+            if let b = Int(breakInput.stringValue), b > 0 { UserDefaults.standard.set(b, forKey: "breakDuration") }
+            if mode == .pomodoro && !isRunning {
+                reset() // refresh immediately
+            }
+        }
+    }
+    
     @objc func checkUpdatesManually() {
         updater.checkForUpdates()
     }
     
     @objc func performUpdate() {
-        if isRunning || accumulatedTime > 0 {
+        if isRunning || (mode == .stopwatch ? accumulatedTime > 0 : pomodoroRemainingSeconds < TimeInterval(UserDefaults.standard.integer(forKey: "workDuration") * 60)) {
             let alert = NSAlert()
             alert.messageText = "Cannot Update"
-            alert.informativeText = "Please reset the stopwatch to 00:00 before applying an update to prevent losing your tracked time."
+            alert.informativeText = "Please reset the timer before applying an update to prevent losing your tracked time."
             alert.alertStyle = .warning
             alert.addButton(withTitle: "OK")
+            NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
             return
         }
